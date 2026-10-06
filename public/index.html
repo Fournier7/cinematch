@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CineMatch – filmes parecidos</title>
+<style>
+:root{--bg:#0d0c11;--fg:#f4f1f8;--mut:#9b95a8;--card:#17151e;--line:#2a2733;--acc:#e64980;--acc2:#7950f2}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(900px 500px at 50% -100px,rgba(121,80,242,.25),transparent),var(--bg);color:var(--fg);font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;line-height:1.5}
+.wrap{max-width:1100px;margin:0 auto;padding:0 20px 60px}
+header{padding:56px 0 28px;text-align:center}
+.logo{font-weight:800;letter-spacing:.2em;font-size:.8rem;color:var(--acc);text-transform:uppercase}
+h1{font-size:clamp(2rem,6vw,3.6rem);line-height:1.05;margin:12px 0;font-weight:800;letter-spacing:-.03em}
+h1 span{background:linear-gradient(90deg,var(--acc),var(--acc2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.sub{color:var(--mut);max-width:520px;margin:0 auto 28px}
+.sbox{position:relative;max-width:620px;margin:0 auto}
+.search{display:flex;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:6px;transition:.2s}
+.search:focus-within{border-color:var(--acc2);box-shadow:0 10px 50px rgba(230,73,128,.25)}
+.search input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font-size:1rem;padding:12px 18px;outline:none}
+.search button{border:0;border-radius:999px;padding:0 24px;font-weight:700;color:#fff;cursor:pointer;background:linear-gradient(90deg,var(--acc),var(--acc2))}
+#sug{position:absolute;left:0;right:0;top:calc(100% + 8px);background:var(--card);border:1px solid var(--line);border-radius:18px;overflow:hidden;z-index:10;display:none;text-align:left;box-shadow:0 20px 50px rgba(0,0,0,.5)}
+#sug div{display:flex;gap:12px;align-items:center;padding:8px 14px;cursor:pointer}
+#sug div:hover,#sug div.on{background:rgba(121,80,242,.18)}
+#sug img,#sug i{width:34px;height:50px;border-radius:5px;object-fit:cover;background:var(--line);flex:none}
+#sug small{color:var(--mut)}
+h2{font-size:1.2rem;margin:44px 0 16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px}
+.poster{position:relative;aspect-ratio:2/3;border-radius:14px;overflow:hidden;cursor:pointer;background:linear-gradient(160deg,#3a3550,#14121c);transition:transform .25s,box-shadow .25s}
+.poster:hover{transform:translateY(-6px) scale(1.02);box-shadow:0 18px 40px rgba(0,0,0,.6)}
+.poster img{width:100%;height:100%;object-fit:cover;display:block}
+.poster span{position:absolute;inset:auto 0 0 0;padding:30px 10px 10px;font-weight:700;font-size:.85rem;background:linear-gradient(transparent,rgba(0,0,0,.85))}
+#status{text-align:center;color:var(--mut);margin:30px 0;display:none}
+#status.err{color:var(--acc)}
+.loader{display:inline-block;width:18px;height:18px;border:3px solid var(--line);border-top-color:var(--acc);border-radius:50%;animation:s .8s linear infinite;vertical-align:-3px;margin-right:8px}
+@keyframes s{to{transform:rotate(360deg)}}
+#results{display:none}
+.item{display:grid;grid-template-columns:110px 1fr;gap:18px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:14px;animation:in .5s both}
+.item.base{border-color:var(--acc2)}
+@keyframes in{from{opacity:0;transform:translateY(14px)}}
+.item .poster{cursor:default;border-radius:10px}.item .poster:hover{transform:none;box-shadow:none}
+.item h3{margin:0;font-size:1.2rem}.item h3 small{color:var(--mut);font-weight:500}
+.item p{margin:8px 0 0;color:var(--mut);font-size:.92rem}
+.tag{display:inline-block;font-size:.72rem;padding:3px 10px;border-radius:999px;border:1px solid var(--line);color:var(--mut);margin:6px 6px 0 0}
+.tag.hit{border-color:var(--acc2);color:#c5b3ff}
+.gem{background:linear-gradient(90deg,var(--acc),var(--acc2));color:#fff;border:0;font-weight:700}
+.rate{color:#ffd43b;font-weight:700;font-size:.85rem}
+a{color:var(--acc)}
+footer{text-align:center;color:var(--mut);font-size:.78rem;margin-top:50px}
+@media(max-width:520px){.item{grid-template-columns:80px 1fr;gap:12px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="logo">● CineMatch</div>
+  <h1>Gostou de um filme?<br><span>Ache o próximo.</span></h1>
+  <p class="sub">Digite um filme e receba 5 sugestões com sinopse e gêneros parecidos — sempre com uma joia pouco conhecida.</p>
+  <div class="sbox">
+    <div class="search"><input id="q" placeholder="Ex.: Clube da Luta, Cidade de Deus, O Iluminado…" autocomplete="off" aria-label="Nome do filme"><button id="go">Buscar</button></div>
+    <div id="sug"></div>
+  </div>
+</header>
+<div id="status"></div>
+<section id="results">
+  <h2>Seu filme</h2><div id="base"></div>
+  <h2>5 filmes para ver em seguida</h2><div id="recs"></div>
+</section>
+<h2>Clássicos para começar</h2>
+<div class="grid" id="classics"></div>
+<footer>Este produto usa a API do TMDB, mas não é endossado ou certificado pelo <a href="https://www.themoviedb.org" target="_blank" rel="noopener">TMDB</a>.</footer>
+</div>
+
+<script>
+const LANG = "pt-BR";
+const IMG = "https://image.tmdb.org/t/p/w342";
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+// Todas as chamadas passam pela função do Netlify, que guarda a chave no servidor.
+async function api(path, params = {}) {
+  const u = new URL("/.netlify/functions/tmdb", location.origin);
+  u.searchParams.set("path", path);
+  u.searchParams.set("language", LANG);
+  for (const [k, v] of Object.entries(params)) u.searchParams.set(k, v);
+  const r = await fetch(u);
+  if (r.status === 500) throw new Error("Servidor sem chave configurada (variável TMDB_KEY no Netlify).");
+  if (r.status === 401) throw new Error("Chave do TMDB inválida.");
+  if (!r.ok) throw new Error("Erro ao consultar o TMDB (" + r.status + ").");
+  return r.json();
+}
+const safe = p => p.catch(() => ({ results: [] }));
+
+/* ---------- Clássicos na home ---------- */
+const CLASSICS = [["Casablanca",1942],["2001: A Space Odyssey",1968],["The Godfather",1972],["Psycho",1960],["Singin' in the Rain",1952],["Seven Samurai",1954],["Taxi Driver",1976],["Blade Runner",1982],["The Shining",1980],["Central do Brasil",1998],["Jaws",1975],["Metropolis",1927]];
+async function loadClassics() {
+  const rs = await Promise.all(CLASSICS.map(([t, y]) => safe(api("/search/movie", { query: t, year: y })).then(r => r.results[0])));
+  $("classics").innerHTML = rs.filter(Boolean).map(m => `<div class="poster" data-id="${m.id}">${m.poster_path ? `<img loading="lazy" src="${IMG + m.poster_path}" alt="${esc(m.title)}">` : ""}<span>${esc(m.title)} · ${(m.release_date || "").slice(0, 4)}</span></div>`).join("");
+}
+$("classics").addEventListener("click", e => { const p = e.target.closest(".poster"); if (p) recommend(+p.dataset.id); });
+
+/* ---------- Busca com sugestões ---------- */
+const q = $("q"), sug = $("sug"); let timer, hits = [], cur = -1;
+q.addEventListener("input", () => {
+  clearTimeout(timer);
+  if (q.value.trim().length < 2) { sug.style.display = "none"; return; }
+  timer = setTimeout(async () => {
+    try { hits = (await api("/search/movie", { query: q.value.trim() })).results.slice(0, 6); } catch { hits = []; }
+    cur = -1;
+    sug.innerHTML = hits.map((m, i) => `<div data-i="${i}">${m.poster_path ? `<img src="${IMG + m.poster_path}" alt="">` : "<i></i>"}<span>${esc(m.title)} <small>${(m.release_date || "").slice(0, 4)}</small></span></div>`).join("");
+    sug.style.display = hits.length ? "block" : "none";
+  }, 250);
+});
+sug.addEventListener("click", e => { const d = e.target.closest("div"); if (d) pick(hits[+d.dataset.i]); });
+q.addEventListener("keydown", e => {
+  const items = [...sug.children];
+  if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+    e.preventDefault(); if (!items.length) return;
+    cur = (cur + (e.key === "ArrowDown" ? 1 : -1) + items.length) % items.length;
+    items.forEach((x, i) => x.classList.toggle("on", i === cur));
+  } else if (e.key === "Enter") { cur >= 0 ? pick(hits[cur]) : go(); }
+  else if (e.key === "Escape") sug.style.display = "none";
+});
+document.addEventListener("click", e => { if (!e.target.closest(".sbox")) sug.style.display = "none"; });
+function pick(m) { if (!m) return; q.value = m.title; sug.style.display = "none"; recommend(m.id); }
+async function go() {
+  const t = q.value.trim(); if (!t) return q.focus();
+  sug.style.display = "none"; say("loader", "Procurando “" + esc(t) + "”…");
+  try {
+    const r = (await api("/search/movie", { query: t })).results[0];
+    if (!r) return say("err", "Não encontrei esse filme. Tente outro nome.");
+    q.value = r.title; recommend(r.id);
+  } catch (e) { say("err", esc(e.message)); }
+}
+$("go").onclick = go;
+
+function say(kind, html) {
+  const s = $("status"); s.style.display = html ? "block" : "none";
+  s.className = kind === "err" ? "err" : "";
+  s.innerHTML = (kind === "loader" ? '<span class="loader"></span>' : "") + html;
+}
+
+/* ---------- Motor de similaridade ---------- */
+const STOP = new Set("para como mais mas uma uns umas que com por dos das nos nas seu sua seus suas ele ela eles elas entre sobre quando depois ainda onde cada pela pelo pelos pelas isso esse essa este esta mesmo tambem apos ate sem muito tudo todo toda vida filme historia the and with that his her from into who when their".split(" "));
+const tok = s => (s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").split(/[^a-z]+/).filter(w => w.length > 3 && !STOP.has(w));
+function buildVecs(texts) {
+  const docs = texts.map(t => { const m = {}; tok(t).forEach(w => m[w] = (m[w] || 0) + 1); return m; });
+  const df = {}; docs.forEach(d => Object.keys(d).forEach(w => df[w] = (df[w] || 0) + 1));
+  return docs.map(d => { const v = {}; let n = 0; for (const w in d) { v[w] = d[w] * Math.log(1 + docs.length / df[w]); n += v[w] ** 2; } return { v, n: Math.sqrt(n) || 1 }; });
+}
+const cos = (a, b) => { let s = 0; for (const w in a.v) if (b.v[w]) s += a.v[w] * b.v[w]; return s / (a.n * b.n); };
+const jac = (a, b) => { const A = new Set(a), B = new Set(b), i = [...A].filter(x => B.has(x)).length; return i / (A.size + B.size - i || 1); };
+
+let busy = false;
+async function recommend(id) {
+  if (busy) return; busy = true; $("results").style.display = "none";
+  say("loader", "Comparando sinopses e gêneros…");
+  try {
+    const base = await api("/movie/" + id, { append_to_response: "keywords" });
+    const gids = base.genres.map(g => g.id), gname = Object.fromEntries(base.genres.map(g => [g.id, g.name]));
+    const kws = (base.keywords?.keywords || []).slice(0, 6).map(k => k.id);
+    const disc = extra => safe(api("/discover/movie", { with_genres: gids.slice(0, 2).join(","), ...(kws.length ? { with_keywords: kws.join("|") } : {}), ...extra }));
+    const [rec, sim, pop, gems1, gems2, gl] = await Promise.all([
+      safe(api(`/movie/${id}/recommendations`)), safe(api(`/movie/${id}/similar`)),
+      disc({ sort_by: "vote_count.desc", "vote_count.gte": 300 }),
+      disc({ sort_by: "vote_average.desc", "vote_count.gte": 120, "vote_count.lte": 2500, "vote_average.gte": 6.4 }),
+      disc({ sort_by: "vote_average.desc", "vote_count.gte": 120, "vote_count.lte": 2500, "vote_average.gte": 6.4, page: 2 }),
+      safe(api("/genre/movie/list"))
+    ]);
+    (gl.genres || []).forEach(g => gname[g.id] = g.name);
+    const inRec = new Set(rec.results.map(m => m.id));
+    const seen = new Map();
+    [...rec.results, ...sim.results, ...pop.results, ...gems1.results, ...gems2.results].forEach(m => { if (m.id !== id && m.overview && m.poster_path && !seen.has(m.id)) seen.set(m.id, m); });
+    const cands = [...seen.values()];
+    const vecs = buildVecs([base.overview, ...cands.map(m => m.overview)]);
+    cands.forEach((m, i) => {
+      m.score = 0.45 * cos(vecs[0], vecs[i + 1]) * 3 + 0.35 * jac(gids, m.genre_ids) + 0.1 * (inRec.has(m.id) ? 1 : 0) + 0.1 * (m.vote_average / 10);
+      m.obscure = m.vote_count <= 2500 && m.vote_average >= 6.3;
+    });
+    cands.sort((a, b) => b.score - a.score);
+    const gem = cands.find(m => m.obscure);
+    const top = cands.filter(m => m !== gem && !(m.obscure && m.vote_count < 600)).slice(0, 4);
+    const final = [...top, gem].filter(Boolean);
+    if (final.length < 5) cands.forEach(m => { if (final.length < 5 && !final.includes(m)) final.push(m); });
+    if (!final.length) throw new Error("Não achei filmes parecidos para esse título.");
+    final.sort((a, b) => b.score - a.score);
+    $("base").innerHTML = card(base, base.genres.map(g => g.name), [], false, true);
+    $("recs").innerHTML = final.map((m, i) => card(m, m.genre_ids.map(g => gname[g]).filter(Boolean), gids.map(g => gname[g]), m === gem, false, i)).join("");
+    say("", ""); $("results").style.display = "block"; $("results").scrollIntoView({ behavior: "smooth" });
+  } catch (e) { say("err", esc(e.message)); }
+  busy = false;
+}
+
+function card(m, genres, shared, gem, isBase, i = 0) {
+  const y = (m.release_date || "").slice(0, 4);
+  const tags = genres.map(g => `<span class="tag ${shared.includes(g) ? "hit" : ""}">${esc(g)}</span>`).join("");
+  const ov = m.overview.length > 260 ? m.overview.slice(0, 257) + "…" : m.overview;
+  return `<article class="item ${isBase ? "base" : ""}" style="animation-delay:${i * 90}ms">
+    <div class="poster">${m.poster_path ? `<img src="${IMG + m.poster_path}" alt="${esc(m.title)}">` : ""}</div>
+    <div><h3><a href="https://www.themoviedb.org/movie/${m.id}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none">${esc(m.title)}</a> <small>(${y})</small></h3>
+    <div>${gem ? '<span class="tag gem">💎 Joia pouco conhecida</span>' : ""}<span class="rate">★ ${m.vote_average.toFixed(1)}</span> ${tags}</div>
+    <p>${esc(ov)}</p></div></article>`;
+}
+
+loadClassics().catch(e => say("err", esc(e.message)));
+</script>
+</body>
+</html>
