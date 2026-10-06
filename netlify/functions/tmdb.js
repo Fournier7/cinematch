@@ -2,7 +2,7 @@
 const ALLOWED = [
   /^\/search\/movie$/,
   /^\/movie\/\d+$/,
-  /^\/movie\/\d+\/(recommendations|similar)$/,
+  /^\/movie\/\d+\/(recommendations|similar|watch\/providers)$/,
   /^\/discover\/movie$/,
   /^\/genre\/movie\/list$/
 ];

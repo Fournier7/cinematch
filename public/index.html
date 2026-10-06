@@ -47,6 +47,17 @@ h2{font-size:1.2rem;margin:44px 0 16px}
 .rate{color:#ffd43b;font-weight:700;font-size:.85rem}
 a{color:var(--acc)}
 footer{text-align:center;color:var(--mut);font-size:.78rem;margin-top:50px}
+.filters{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px}
+.filters select{background:var(--card);color:var(--fg);border:1px solid var(--line);border-radius:999px;padding:9px 14px;font-size:.88rem;outline:none}
+.filters select:focus{border-color:var(--acc2)}
+.prov{margin-top:10px;font-size:.8rem;color:var(--mut)}
+.prov div{display:flex;align-items:center;gap:6px;margin-top:4px;flex-wrap:wrap}
+.prov img{width:28px;height:28px;border-radius:7px}
+.seenbtn{margin-top:10px;background:transparent;color:var(--mut);border:1px solid var(--line);border-radius:999px;padding:5px 14px;font-size:.78rem;cursor:pointer}
+.seenbtn:hover{color:var(--fg);border-color:var(--acc2)}
+.chip{display:inline-flex;align-items:center;gap:6px;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:4px 6px 4px 12px;font-size:.8rem;margin:0 6px 6px 0}
+.chip button{background:none;border:0;color:var(--mut);cursor:pointer;font-size:1rem;line-height:1}
+.mut{color:var(--mut)}
 @media(max-width:520px){.item{grid-template-columns:80px 1fr;gap:12px}}
 </style>
 </head>
@@ -64,11 +75,18 @@ footer{text-align:center;color:var(--mut);font-size:.78rem;margin-top:50px}
 <div id="status"></div>
 <section id="results">
   <h2>Seu filme</h2><div id="base"></div>
-  <h2>5 filmes para ver em seguida</h2><div id="recs"></div>
+  <h2>5 filmes para ver em seguida</h2>
+  <div class="filters" id="filters">
+    <select id="fg" aria-label="Gênero"></select>
+    <select id="fd" aria-label="Época"></select>
+    <select id="fr" aria-label="Nota mínima"><option value="0">Qualquer nota</option><option value="6">Nota 6+</option><option value="7">Nota 7+</option><option value="8">Nota 8+</option></select>
+  </div>
+  <div id="recs"></div>
 </section>
+<section id="seenBox" style="display:none"><h2>Filmes que você já viu</h2><div id="seen"></div></section>
 <h2>Clássicos para começar</h2>
 <div class="grid" id="classics"></div>
-<footer>Este produto usa a API do TMDB, mas não é endossado ou certificado pelo <a href="https://www.themoviedb.org" target="_blank" rel="noopener">TMDB</a>.</footer>
+<footer>Este produto usa a API do TMDB, mas não é endossado ou certificado pelo <a href="https://www.themoviedb.org" target="_blank" rel="noopener">TMDB</a>. Dados de onde assistir: JustWatch.</footer>
 </div>
 
 <script>
@@ -177,16 +195,10 @@ async function recommend(id) {
       m.score = 0.45 * cos(vecs[0], vecs[i + 1]) * 3 + 0.35 * jac(gids, m.genre_ids) + 0.1 * (inRec.has(m.id) ? 1 : 0) + 0.1 * (m.vote_average / 10);
       m.obscure = m.vote_count <= 2500 && m.vote_average >= 6.3;
     });
+    if (!cands.length) throw new Error("Não achei filmes parecidos para esse título.");
     cands.sort((a, b) => b.score - a.score);
-    const gem = cands.find(m => m.obscure);
-    const top = cands.filter(m => m !== gem && !(m.obscure && m.vote_count < 600)).slice(0, 4);
-    const final = [...top, gem].filter(Boolean);
-    if (final.length < 5) cands.forEach(m => { if (final.length < 5 && !final.includes(m)) final.push(m); });
-    if (!final.length) throw new Error("Não achei filmes parecidos para esse título.");
-    final.sort((a, b) => b.score - a.score);
-    $("base").innerHTML = card(base, base.genres.map(g => g.name), [], false, true);
-    $("recs").innerHTML = final.map((m, i) => card(m, m.genre_ids.map(g => gname[g]).filter(Boolean), gids.map(g => gname[g]), m === gem, false, i)).join("");
-    say("", ""); $("results").style.display = "block"; $("results").scrollIntoView({ behavior: "smooth" });
+    S = { base, cands, gname, gids };
+    buildFilters(); say("", ""); showRecs(true);
   } catch (e) { say("err", esc(e.message)); }
   busy = false;
 }
@@ -199,9 +211,69 @@ function card(m, genres, shared, gem, isBase, i = 0) {
     <div class="poster">${m.poster_path ? `<img src="${IMG + m.poster_path}" alt="${esc(m.title)}">` : ""}</div>
     <div><h3><a href="https://www.themoviedb.org/movie/${m.id}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none">${esc(m.title)}</a> <small>(${y})</small></h3>
     <div>${gem ? '<span class="tag gem">💎 Joia pouco conhecida</span>' : ""}<span class="rate">★ ${m.vote_average.toFixed(1)}</span> ${tags}</div>
-    <p>${esc(ov)}</p></div></article>`;
+    <p>${esc(ov)}</p>
+    ${isBase ? "" : `<div class="prov" id="p-${m.id}"><small>Buscando onde assistir…</small></div><button class="seenbtn" data-id="${m.id}">✓ Já vi</button>`}</div></article>`;
 }
 
+/* ---------- Filtros, "já vi" e onde assistir ---------- */
+let S = null;
+const decade = m => { const y = +(m.release_date || "").slice(0, 4); return y ? Math.floor(y / 10) * 10 : 0; };
+function getSeen() { try { return JSON.parse(localStorage.getItem("cm_seen") || "{}"); } catch { return {}; } }
+function setSeen(o) { try { localStorage.setItem("cm_seen", JSON.stringify(o)); } catch {} }
+
+function buildFilters() {
+  const gs = new Map(), ds = new Set();
+  S.cands.forEach(m => { m.genre_ids.forEach(g => S.gname[g] && gs.set(g, S.gname[g])); if (decade(m)) ds.add(decade(m)); });
+  $("fg").innerHTML = '<option value="">Todos os gêneros</option>' + [...gs].sort((a, b) => a[1].localeCompare(b[1])).map(([i, n]) => `<option value="${i}">${esc(n)}</option>`).join("");
+  $("fd").innerHTML = '<option value="">Qualquer época</option>' + [...ds].sort().map(d => `<option value="${d}">Anos ${d}</option>`).join("");
+  $("fr").value = "0";
+}
+
+function showRecs(scroll) {
+  const { base, cands, gname, gids } = S, seen = getSeen();
+  const g = $("fg").value, d = +$("fd").value, r = +$("fr").value;
+  const pool = cands.filter(m => !seen[m.id] && (!g || m.genre_ids.includes(+g)) && (!d || decade(m) === d) && m.vote_average >= r);
+  const gem = pool.find(m => m.obscure);
+  const final = [...pool.filter(m => m !== gem && !(m.obscure && m.vote_count < 600)).slice(0, 4), gem].filter(Boolean);
+  if (final.length < 5) pool.forEach(m => { if (final.length < 5 && !final.includes(m)) final.push(m); });
+  final.sort((a, b) => b.score - a.score);
+  $("base").innerHTML = card(base, base.genres.map(x => x.name), [], false, true);
+  $("recs").innerHTML = final.length
+    ? final.map((m, i) => card(m, m.genre_ids.map(x => gname[x]).filter(Boolean), gids.map(x => gname[x]), m === gem, false, i)).join("")
+    : '<p class="mut">Nenhum filme com esses filtros. Tente afrouxar algum deles.</p>';
+  $("results").style.display = "block";
+  if (scroll) $("results").scrollIntoView({ behavior: "smooth" });
+  loadProviders(final); renderSeen();
+}
+$("filters").addEventListener("change", () => S && showRecs(false));
+
+$("recs").addEventListener("click", e => {
+  const b = e.target.closest(".seenbtn"); if (!b || !S) return;
+  const m = S.cands.find(x => x.id === +b.dataset.id); if (!m) return;
+  const o = getSeen(); o[m.id] = m.title; setSeen(o); showRecs(false);
+});
+function renderSeen() {
+  const o = getSeen(), ids = Object.keys(o);
+  $("seenBox").style.display = ids.length ? "block" : "none";
+  $("seen").innerHTML = ids.map(i => `<span class="chip">${esc(o[i])}<button data-un="${i}" aria-label="Remover">×</button></span>`).join("");
+}
+$("seen").addEventListener("click", e => {
+  const b = e.target.closest("[data-un]"); if (!b) return;
+  const o = getSeen(); delete o[b.dataset.un]; setSeen(o); S ? showRecs(false) : renderSeen();
+});
+
+const provCache = {};
+async function loadProviders(list) {
+  await Promise.all(list.map(async m => {
+    try {
+      if (!provCache[m.id]) provCache[m.id] = (await api(`/movie/${m.id}/watch/providers`)).results?.BR || {};
+      const d = provCache[m.id], el = $("p-" + m.id); if (!el) return;
+      const row = (arr, l) => arr?.length ? `<div><small>${l}</small>${arr.slice(0, 6).map(p => `<img src="https://image.tmdb.org/t/p/w92${p.logo_path}" title="${esc(p.provider_name)}" alt="${esc(p.provider_name)}">`).join("")}</div>` : "";
+      el.innerHTML = row(d.flatrate, "Streaming") + row(d.rent, "Alugar") + row(d.buy, "Comprar") || "<small>Sem informação de streaming no Brasil</small>";
+    } catch {}
+  }));
+}
+renderSeen();
 loadClassics().catch(e => say("err", esc(e.message)));
 </script>
 </body>
