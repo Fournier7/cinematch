@@ -64,10 +64,11 @@ Este é um projeto de estudo, vindo de uma ideia pessoal de um amante de filmes,
 **O que aprendi fazendo:**
 
 - Como uma API funciona e como obter uma chave de acesso
-- Seguran;ca de chave e como esconder uma com uma função no servidor
+- Segurança de chave e como esconder uma com uma função no servidor
 - Publicar um site com deploy automático a cada commit
 - Usar o GitHub Desktop para versionar o projeto
 
 ## Créditos
 
 Este produto usa a API do TMDB, mas não é endossado ou certificado pelo [TMDB](https://www.themoviedb.org). Dados de onde assistir fornecidos pelo JustWatch.
+
