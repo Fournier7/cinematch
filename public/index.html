@@ -5,83 +5,103 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>CineMatch – filmes parecidos</title>
 <style>
-:root{--bg:#0d0c11;--fg:#f4f1f8;--mut:#9b95a8;--card:#17151e;--line:#2a2733;--acc:#e64980;--acc2:#7950f2}
+:root{--bg:#0b0b0f;--fg:#f5f3f7;--mut:#9a95a5;--card:#16151c;--line:#26242e;--red:#ff2a45;--red2:#b3001b}
 *{box-sizing:border-box}
-body{margin:0;background:radial-gradient(900px 500px at 50% -100px,rgba(121,80,242,.25),transparent),var(--bg);color:var(--fg);font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;line-height:1.5}
-.wrap{max-width:1100px;margin:0 auto;padding:0 20px 60px}
-header{padding:56px 0 28px;text-align:center}
-.logo{font-weight:800;letter-spacing:.2em;font-size:.8rem;color:var(--acc);text-transform:uppercase}
-h1{font-size:clamp(2rem,6vw,3.6rem);line-height:1.05;margin:12px 0;font-weight:800;letter-spacing:-.03em}
-h1 span{background:linear-gradient(90deg,var(--acc),var(--acc2));-webkit-background-clip:text;background-clip:text;color:transparent}
-.sub{color:var(--mut);max-width:520px;margin:0 auto 28px}
-.sbox{position:relative;max-width:620px;margin:0 auto}
-.search{display:flex;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:6px;transition:.2s}
-.search:focus-within{border-color:var(--acc2);box-shadow:0 10px 50px rgba(230,73,128,.25)}
-.search input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font-size:1rem;padding:12px 18px;outline:none}
-.search button{border:0;border-radius:999px;padding:0 24px;font-weight:700;color:#fff;cursor:pointer;background:linear-gradient(90deg,var(--acc),var(--acc2))}
-#sug{position:absolute;left:0;right:0;top:calc(100% + 8px);background:var(--card);border:1px solid var(--line);border-radius:18px;overflow:hidden;z-index:10;display:none;text-align:left;box-shadow:0 20px 50px rgba(0,0,0,.5)}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;line-height:1.5}
+a{color:inherit}
+.rail{position:fixed;left:0;top:0;bottom:0;width:60px;background:#111016;border-right:1px solid var(--line);display:none;flex-direction:column;align-items:center;gap:14px;padding-top:84px;z-index:40}
+.rail a{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;text-decoration:none;color:var(--mut)}
+.rail a:hover{background:var(--card);color:var(--fg)}
+@media(min-width:900px){.rail{display:flex}body{padding-left:60px}}
+.nav{position:sticky;top:0;z-index:30;display:flex;gap:16px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:14px 24px;background:rgba(11,11,15,.88);backdrop-filter:blur(10px)}
+.logo{font-weight:800;font-size:1.3rem;letter-spacing:-.02em}.logo b{color:var(--red)}
+.sbox{position:relative;flex:1;max-width:520px;min-width:240px}
+.search{display:flex;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:4px;transition:.2s}
+.search:focus-within{border-color:var(--red);box-shadow:0 0 0 3px rgba(255,42,69,.2)}
+.search input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font-size:.95rem;padding:9px 16px;outline:none}
+.search button{border:0;border-radius:999px;padding:0 20px;font-weight:700;color:#fff;cursor:pointer;background:var(--red)}
+#sug{position:absolute;left:0;right:0;top:calc(100% + 8px);background:var(--card);border:1px solid var(--line);border-radius:18px;overflow:hidden;z-index:50;display:none;box-shadow:0 20px 50px rgba(0,0,0,.6)}
 #sug div{display:flex;gap:12px;align-items:center;padding:8px 14px;cursor:pointer}
-#sug div:hover,#sug div.on{background:rgba(121,80,242,.18)}
+#sug div:hover,#sug div.on{background:rgba(255,42,69,.15)}
 #sug img,#sug i{width:34px;height:50px;border-radius:5px;object-fit:cover;background:var(--line);flex:none}
 #sug small{color:var(--mut)}
-h2{font-size:1.2rem;margin:44px 0 16px}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px}
-.poster{position:relative;aspect-ratio:2/3;border-radius:14px;overflow:hidden;cursor:pointer;background:linear-gradient(160deg,#3a3550,#14121c);transition:transform .25s,box-shadow .25s}
-.poster:hover{transform:translateY(-6px) scale(1.02);box-shadow:0 18px 40px rgba(0,0,0,.6)}
+.hero{position:relative;min-height:440px;display:flex;align-items:flex-end;overflow:hidden;margin:8px 24px 0;border-radius:24px;background:#15131b}
+.hbg{position:absolute;inset:0;background-size:cover;background-position:center 20%}
+.hero::before{content:"";position:absolute;inset:0;z-index:1;background:linear-gradient(90deg,var(--bg) 0%,rgba(11,11,15,.85) 35%,transparent 80%),linear-gradient(0deg,var(--bg),transparent 45%),radial-gradient(circle at 85% 25%,rgba(255,42,69,.35),transparent 50%)}
+.hin{position:relative;z-index:2;max-width:560px;padding:40px}
+.lab{font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;color:var(--red);font-weight:700}
+.hin h1{font-size:clamp(2rem,5vw,3.3rem);line-height:1.05;margin:8px 0 12px;letter-spacing:-.03em}
+.meta{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:.85rem;color:var(--mut)}
+.hin p{color:#cfcad6;font-size:.95rem;margin:14px 0 20px}
+.btn{display:inline-block;border:0;border-radius:999px;padding:11px 26px;font-weight:700;color:#fff;background:var(--red);cursor:pointer;text-decoration:none;font-size:.9rem}
+.btn.ghost{background:rgba(255,255,255,.14)}
+.tag{display:inline-block;font-size:.72rem;padding:3px 10px;border-radius:999px;border:1px solid var(--line);color:var(--mut);margin:0 4px 4px 0}
+.tag.hit{border-color:var(--red);color:#ff8a9a}
+.rate{color:#ffd43b;font-weight:700}
+.wrap{max-width:1200px;margin:0 auto;padding:0 24px 60px}
+h2{font-size:1.25rem;margin:44px 0 16px}.c{text-align:center;font-size:1.6rem}
+.filters{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-bottom:22px}
+.filters select{background:var(--card);color:var(--fg);border:1px solid var(--line);border-radius:999px;padding:8px 14px;font-size:.85rem;outline:none}
+.filters select:focus{border-color:var(--red)}
+.cards{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+@media(min-width:640px){.cards{grid-template-columns:repeat(3,1fr)}}
+@media(min-width:1000px){.cards{grid-template-columns:repeat(5,1fr)}}
+.pc{animation:in .5s both}
+@keyframes in{from{opacity:0;transform:translateY(14px)}}
+.pp{position:relative;aspect-ratio:2/3;border-radius:14px;overflow:hidden;background:var(--card);cursor:pointer}
+.pp img{width:100%;height:100%;object-fit:cover;display:block}
+.bd{position:absolute;top:8px;left:8px;z-index:2;display:flex;gap:6px;flex-wrap:wrap}
+.bd span{background:rgba(0,0,0,.7);border-radius:8px;padding:2px 8px;font-size:.72rem;font-weight:700}
+.bd .gem{background:linear-gradient(90deg,var(--red),var(--red2))}
+.ov{position:absolute;inset:0;z-index:3;background:linear-gradient(0deg,rgba(0,0,0,.96),rgba(0,0,0,.75));padding:14px;display:flex;flex-direction:column;gap:8px;opacity:0;transition:.25s;overflow:auto;font-size:.78rem}
+.pc:hover .ov,.pc.open .ov{opacity:1}
+.ov p{margin:0;color:#d7d2de}
+.pt{margin-top:8px;font-weight:600;font-size:.9rem}.pt small{color:var(--mut);font-weight:400}
+.prov{color:var(--mut)}
+.prov div{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-top:4px}
+.prov img{width:24px;height:24px;border-radius:6px}
+.seenbtn{background:transparent;color:#fff;border:1px solid var(--red);border-radius:999px;padding:5px 14px;font-size:.75rem;cursor:pointer}
+.seenbtn:hover{background:var(--red)}
+.tmdb{font-size:.75rem;color:var(--mut);margin-left:8px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:14px}
+.poster{position:relative;aspect-ratio:2/3;border-radius:14px;overflow:hidden;cursor:pointer;background:var(--card);transition:transform .25s}
+.poster:hover{transform:translateY(-6px)}
 .poster img{width:100%;height:100%;object-fit:cover;display:block}
-.poster span{position:absolute;inset:auto 0 0 0;padding:30px 10px 10px;font-weight:700;font-size:.85rem;background:linear-gradient(transparent,rgba(0,0,0,.85))}
-#status{text-align:center;color:var(--mut);margin:30px 0;display:none}
-#status.err{color:var(--acc)}
-.loader{display:inline-block;width:18px;height:18px;border:3px solid var(--line);border-top-color:var(--acc);border-radius:50%;animation:s .8s linear infinite;vertical-align:-3px;margin-right:8px}
+.poster span{position:absolute;inset:auto 0 0 0;padding:30px 10px 10px;font-weight:700;font-size:.82rem;background:linear-gradient(transparent,rgba(0,0,0,.88))}
+#status{text-align:center;color:var(--mut);margin:30px 0 0;display:none}
+#status.err{color:var(--red)}
+.loader{display:inline-block;width:18px;height:18px;border:3px solid var(--line);border-top-color:var(--red);border-radius:50%;animation:s .8s linear infinite;vertical-align:-3px;margin-right:8px}
 @keyframes s{to{transform:rotate(360deg)}}
 #results{display:none}
-.item{display:grid;grid-template-columns:110px 1fr;gap:18px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:14px;animation:in .5s both}
-.item.base{border-color:var(--acc2)}
-@keyframes in{from{opacity:0;transform:translateY(14px)}}
-.item .poster{cursor:default;border-radius:10px}.item .poster:hover{transform:none;box-shadow:none}
-.item h3{margin:0;font-size:1.2rem}.item h3 small{color:var(--mut);font-weight:500}
-.item p{margin:8px 0 0;color:var(--mut);font-size:.92rem}
-.tag{display:inline-block;font-size:.72rem;padding:3px 10px;border-radius:999px;border:1px solid var(--line);color:var(--mut);margin:6px 6px 0 0}
-.tag.hit{border-color:var(--acc2);color:#c5b3ff}
-.gem{background:linear-gradient(90deg,var(--acc),var(--acc2));color:#fff;border:0;font-weight:700}
-.rate{color:#ffd43b;font-weight:700;font-size:.85rem}
-a{color:var(--acc)}
-footer{text-align:center;color:var(--mut);font-size:.78rem;margin-top:50px}
-.filters{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px}
-.filters select{background:var(--card);color:var(--fg);border:1px solid var(--line);border-radius:999px;padding:9px 14px;font-size:.88rem;outline:none}
-.filters select:focus{border-color:var(--acc2)}
-.prov{margin-top:10px;font-size:.8rem;color:var(--mut)}
-.prov div{display:flex;align-items:center;gap:6px;margin-top:4px;flex-wrap:wrap}
-.prov img{width:28px;height:28px;border-radius:7px}
-.seenbtn{margin-top:10px;background:transparent;color:var(--mut);border:1px solid var(--line);border-radius:999px;padding:5px 14px;font-size:.78rem;cursor:pointer}
-.seenbtn:hover{color:var(--fg);border-color:var(--acc2)}
 .chip{display:inline-flex;align-items:center;gap:6px;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:4px 6px 4px 12px;font-size:.8rem;margin:0 6px 6px 0}
 .chip button{background:none;border:0;color:var(--mut);cursor:pointer;font-size:1rem;line-height:1}
-.mut{color:var(--mut)}
-@media(max-width:520px){.item{grid-template-columns:80px 1fr;gap:12px}}
+.mut{color:var(--mut);text-align:center}
+footer{text-align:center;color:var(--mut);font-size:.78rem;margin-top:50px}
+footer a{color:var(--red)}
+@media(max-width:520px){.hero{margin:8px 12px 0;min-height:380px}.hin{padding:24px}.nav{padding:12px}.wrap{padding:0 12px 50px}}
 </style>
 </head>
 <body>
-<div class="wrap">
-<header>
-  <div class="logo">● CineMatch</div>
-  <h1>Gostou de um filme?<br><span>Ache o próximo.</span></h1>
-  <p class="sub">Digite um filme e receba 5 sugestões com sinopse e gêneros parecidos — sempre com uma joia pouco conhecida.</p>
+<nav class="rail"><a href="#" title="Início">🏠</a><a href="#seenBox" title="Já vi">✓</a><a href="#classics" title="Clássicos">🎞️</a></nav>
+<header class="nav">
+  <div class="logo">Cine<b>Match</b></div>
   <div class="sbox">
-    <div class="search"><input id="q" placeholder="Ex.: Clube da Luta, Cidade de Deus, O Iluminado…" autocomplete="off" aria-label="Nome do filme"><button id="go">Buscar</button></div>
+    <div class="search"><input id="q" placeholder="Digite um filme que você gosta…" autocomplete="off" aria-label="Nome do filme"><button id="go">Buscar</button></div>
     <div id="sug"></div>
   </div>
 </header>
+<section class="hero" id="hero"></section>
+<div class="wrap">
 <div id="status"></div>
 <section id="results">
-  <h2>Seu filme</h2><div id="base"></div>
-  <h2>5 filmes para ver em seguida</h2>
+  <h2 class="c">Recomendações para você</h2>
   <div class="filters" id="filters">
     <select id="fg" aria-label="Gênero"></select>
     <select id="fd" aria-label="Época"></select>
     <select id="fr" aria-label="Nota mínima"><option value="0">Qualquer nota</option><option value="6">Nota 6+</option><option value="7">Nota 7+</option><option value="8">Nota 8+</option></select>
   </div>
-  <div id="recs"></div>
+  <div class="cards" id="recs"></div>
 </section>
 <section id="seenBox" style="display:none"><h2>Filmes que você já viu</h2><div id="seen"></div></section>
 <h2>Clássicos para começar</h2>
@@ -112,8 +132,10 @@ const safe = p => p.catch(() => ({ results: [] }));
 /* ---------- Clássicos na home ---------- */
 const CLASSICS = [["Casablanca",1942],["2001: A Space Odyssey",1968],["The Godfather",1972],["Psycho",1960],["Singin' in the Rain",1952],["Seven Samurai",1954],["Taxi Driver",1976],["Blade Runner",1982],["The Shining",1980],["Central do Brasil",1998],["Jaws",1975],["Metropolis",1927]];
 async function loadClassics() {
-  const rs = await Promise.all(CLASSICS.map(([t, y]) => safe(api("/search/movie", { query: t, year: y })).then(r => r.results[0])));
-  $("classics").innerHTML = rs.filter(Boolean).map(m => `<div class="poster" data-id="${m.id}">${m.poster_path ? `<img loading="lazy" src="${IMG + m.poster_path}" alt="${esc(m.title)}">` : ""}<span>${esc(m.title)} · ${(m.release_date || "").slice(0, 4)}</span></div>`).join("");
+  const rs = (await Promise.all(CLASSICS.map(([t, y]) => safe(api("/search/movie", { query: t, year: y })).then(r => r.results[0])))).filter(Boolean);
+  $("classics").innerHTML = rs.map(m => `<div class="poster" data-id="${m.id}">${m.poster_path ? `<img loading="lazy" src="${IMG + m.poster_path}" alt="${esc(m.title)}">` : ""}<span>${esc(m.title)} · ${(m.release_date || "").slice(0, 4)}</span></div>`).join("");
+  const h = rs.filter(m => m.backdrop_path && m.overview);
+  if (h.length && !S) { const m = h[Math.floor(Math.random() * h.length)]; hero(m, "Clássico em destaque", m.genre_ids.map(x => G[x]).filter(Boolean), `<button class="btn" data-rec="${m.id}">Ver filmes parecidos</button>`); }
 }
 $("classics").addEventListener("click", e => { const p = e.target.closest(".poster"); if (p) recommend(+p.dataset.id); });
 
@@ -203,16 +225,18 @@ async function recommend(id) {
   busy = false;
 }
 
-function card(m, genres, shared, gem, isBase, i = 0) {
+const BG = "https://image.tmdb.org/t/p/w1280", G = {};
+async function loadGenres() { ((await safe(api("/genre/movie/list"))).genres || []).forEach(g => G[g.id] = g.name); }
+function hero(m, label, genres, btn) {
+  const y = (m.release_date || "").slice(0, 4), o = m.overview || "";
+  $("hero").innerHTML = `<div class="hbg" ${m.backdrop_path ? `style="background-image:url(${BG + m.backdrop_path})"` : ""}></div><div class="hin"><span class="lab">${label}</span><h1>${esc(m.title)}</h1><div class="meta"><span class="rate">★ ${m.vote_average.toFixed(1)}</span><span>${y}</span>${genres.slice(0, 3).map(g => `<span class="tag">${esc(g)}</span>`).join("")}</div><p>${esc(o.length > 300 ? o.slice(0, 297) + "…" : o)}</p>${btn}</div>`;
+}
+$("hero").addEventListener("click", e => { const b = e.target.closest("[data-rec]"); if (b) recommend(+b.dataset.rec); });
+function pcard(m, genres, shared, gem, i) {
   const y = (m.release_date || "").slice(0, 4);
-  const tags = genres.map(g => `<span class="tag ${shared.includes(g) ? "hit" : ""}">${esc(g)}</span>`).join("");
-  const ov = m.overview.length > 260 ? m.overview.slice(0, 257) + "…" : m.overview;
-  return `<article class="item ${isBase ? "base" : ""}" style="animation-delay:${i * 90}ms">
-    <div class="poster">${m.poster_path ? `<img src="${IMG + m.poster_path}" alt="${esc(m.title)}">` : ""}</div>
-    <div><h3><a href="https://www.themoviedb.org/movie/${m.id}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none">${esc(m.title)}</a> <small>(${y})</small></h3>
-    <div>${gem ? '<span class="tag gem">💎 Joia pouco conhecida</span>' : ""}<span class="rate">★ ${m.vote_average.toFixed(1)}</span> ${tags}</div>
-    <p>${esc(ov)}</p>
-    ${isBase ? "" : `<div class="prov" id="p-${m.id}"><small>Buscando onde assistir…</small></div><button class="seenbtn" data-id="${m.id}">✓ Já vi</button>`}</div></article>`;
+  const tags = genres.slice(0, 4).map(g => `<span class="tag ${shared.includes(g) ? "hit" : ""}">${esc(g)}</span>`).join("");
+  const o = m.overview.length > 150 ? m.overview.slice(0, 147) + "…" : m.overview;
+  return `<div class="pc" style="animation-delay:${i * 90}ms"><div class="pp"><img src="${IMG + m.poster_path}" alt="${esc(m.title)}"><div class="bd">${gem ? '<span class="gem">💎 Joia</span>' : ""}<span>★ ${m.vote_average.toFixed(1)}</span></div><div class="ov"><div>${tags}</div><p>${esc(o)}</p><div class="prov" id="p-${m.id}"><small>Buscando onde assistir…</small></div><div><button class="seenbtn" data-id="${m.id}">✓ Já vi</button><a class="tmdb" href="https://www.themoviedb.org/movie/${m.id}" target="_blank" rel="noopener">Ver no TMDB</a></div></div></div><div class="pt">${esc(m.title)} <small>${y}</small></div></div>`;
 }
 
 /* ---------- Filtros, "já vi" e onde assistir ---------- */
@@ -237,20 +261,21 @@ function showRecs(scroll) {
   const final = [...pool.filter(m => m !== gem && !(m.obscure && m.vote_count < 600)).slice(0, 4), gem].filter(Boolean);
   if (final.length < 5) pool.forEach(m => { if (final.length < 5 && !final.includes(m)) final.push(m); });
   final.sort((a, b) => b.score - a.score);
-  $("base").innerHTML = card(base, base.genres.map(x => x.name), [], false, true);
+  hero(base, "Seu filme", base.genres.map(x => x.name), `<a class="btn ghost" href="https://www.themoviedb.org/movie/${base.id}" target="_blank" rel="noopener">Ver no TMDB</a>`);
   $("recs").innerHTML = final.length
-    ? final.map((m, i) => card(m, m.genre_ids.map(x => gname[x]).filter(Boolean), gids.map(x => gname[x]), m === gem, false, i)).join("")
-    : '<p class="mut">Nenhum filme com esses filtros. Tente afrouxar algum deles.</p>';
+    ? final.map((m, i) => pcard(m, m.genre_ids.map(x => gname[x]).filter(Boolean), gids.map(x => gname[x]), m === gem, i)).join("")
+    : '<p class="mut" style="grid-column:1/-1">Nenhum filme com esses filtros. Tente afrouxar algum deles.</p>';
   $("results").style.display = "block";
-  if (scroll) $("results").scrollIntoView({ behavior: "smooth" });
+  if (scroll) window.scrollTo({ top: 0, behavior: "smooth" });
   loadProviders(final); renderSeen();
 }
 $("filters").addEventListener("change", () => S && showRecs(false));
 
 $("recs").addEventListener("click", e => {
-  const b = e.target.closest(".seenbtn"); if (!b || !S) return;
-  const m = S.cands.find(x => x.id === +b.dataset.id); if (!m) return;
-  const o = getSeen(); o[m.id] = m.title; setSeen(o); showRecs(false);
+  const b = e.target.closest(".seenbtn");
+  if (b) { if (!S) return; const m = S.cands.find(x => x.id === +b.dataset.id); if (!m) return; const o = getSeen(); o[m.id] = m.title; setSeen(o); showRecs(false); return; }
+  if (e.target.closest("a")) return;
+  const c = e.target.closest(".pc"); if (c) c.classList.toggle("open");
 });
 function renderSeen() {
   const o = getSeen(), ids = Object.keys(o);
@@ -274,7 +299,7 @@ async function loadProviders(list) {
   }));
 }
 renderSeen();
-loadClassics().catch(e => say("err", esc(e.message)));
+loadGenres().then(loadClassics).catch(e => say("err", esc(e.message)));
 </script>
 </body>
 </html>
